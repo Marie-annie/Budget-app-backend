@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Param, Body, Patch, BadRequestException,
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transactions.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth/jwt-auth.guard';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -43,7 +44,7 @@ export class TransactionsController {
   }
 
   @Post()
-  create(@Body() transaction: Partial<Transaction>): Promise<Transaction> {
+  create(@Body() transaction: CreateTransactionDto): Promise<Transaction> {
     return this.transactionsService.create(transaction);
   }
 
