@@ -11,7 +11,7 @@ import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), // Load .env file globally
+    ConfigModule.forRoot({ isGlobal: true }), 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,7 +24,7 @@ import { AuthModule } from './auth/auth.module';
         sid: configService.get<string>('DB_SID', 'FREE'),
         logging: true,
         entities: [Transaction, User, Category],
-        synchronize: configService.get<boolean>('DB_SYNCHRONIZE', true), // Set to false in production
+        synchronize: false
       }),
     }),
     TransactionsModule,
