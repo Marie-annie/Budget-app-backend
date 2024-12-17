@@ -35,13 +35,11 @@ export class TransactionsService {
   async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
     const { userId, categoryId, ...transactionData } = createTransactionDto;
 
-    // Find the user
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
 
-    // Find the category (if provided)
     let category = null;
     if (categoryId) {
       category = await this.categoryRepository.findOneBy({ id: categoryId });
@@ -50,7 +48,6 @@ export class TransactionsService {
       }
     }
 
-    // Create the transaction
     const transaction = this.transactionRepository.create({
       ...transactionData,
       user,
@@ -96,29 +93,26 @@ export class TransactionsService {
         'SUM(transaction.amount) AS totalAmount',
       ])
       .where("EXTRACT(YEAR FROM transaction.createdAt) = :year", { year })
-      .andWhere('transaction.userId = :userId', { userId }) // Ensure transactions belong to the user
+      .andWhere('transaction.userId = :userId', { userId }) 
       .groupBy("month, transaction.type")
       .orderBy("month", "ASC")
       .getRawMany();
   
-    // Initialize all months with income and expense as 0
+   
     const monthlyData = Array.from({ length: 12 }, (_, index) => {
-      const month = new Date(year, index).toLocaleString('default', { month: 'short' }); // Convert month number to short name
+      const month = new Date(year, index).toLocaleString('default', { month: 'short' });
       return { month, income: 0, expense: 0 };
     });
   
     result.forEach((row) => {
       const { month, type, totalAmount } = row;
   
-      // Skip rows with missing or invalid data
       if (!month || !type || totalAmount == null) {
         return;
       }
   
-      // Extract the month index (e.g., "2024-01" -> 0 for January)
       const monthIndex = parseInt(month.split('-')[1], 10) - 1;
   
-      // Safely update the correct month
       if (type.toLowerCase() === 'income') {
         monthlyData[monthIndex].income = parseFloat(totalAmount);
       } else if (type.toLowerCase() === 'expense') {
@@ -138,14 +132,15 @@ export class TransactionsService {
 
     const categories = await this.transactionRepository
       .createQueryBuilder('transaction')
-      .select('transaction.category', 'category')
+      .leftJoinAndSelect('transaction.category', 'category')
+      .select('category.name', 'categoryName')
       .addSelect('SUM(transaction.amount)', 'total')
       .where('transaction.userId = :userId', { userId })
-      .groupBy('transaction.category')
+      .groupBy('category.name')
       .getRawMany();
 
     return categories.map(category => ({
-      category: category.category,
+      category: category.categoryName,
       percentage: (category.total / totalAmount.total) * 100,
     }));
   }
