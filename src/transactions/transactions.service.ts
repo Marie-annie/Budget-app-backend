@@ -1,24 +1,62 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction } from './entities/transactions.entity';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { Category } from 'src/categories/entities/categories.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
   ) {}
 
   findAll(): Promise<Transaction[]> {
-    return this.transactionRepository.find();
+    return this.transactionRepository.find({
+      relations:{
+        user:true,
+        category:true,
+      }
+    });
   }
 
   findOne(id: number): Promise<Transaction> {
     return this.transactionRepository.findOneBy({ id });
   }
 
-  create(transaction: Partial<Transaction>): Promise<Transaction> {
+  async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+    const { userId, categoryId, ...transactionData } = createTransactionDto;
+
+    // Find the user
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Find the category (if provided)
+    let category = null;
+    if (categoryId) {
+      category = await this.categoryRepository.findOneBy({ id: categoryId });
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      }
+    }
+
+    // Create the transaction
+    const transaction = this.transactionRepository.create({
+      ...transactionData,
+      user,
+      category,
+    });
+
     return this.transactionRepository.save(transaction);
   }
 
@@ -108,7 +146,7 @@ export class TransactionsService {
 
     return categories.map(category => ({
       category: category.category,
-      percent: (category.total / totalAmount.total) * 100,
+      percentage: (category.total / totalAmount.total) * 100,
     }));
   }
 
