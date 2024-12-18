@@ -7,13 +7,19 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService, // Inject UsersService
+    private readonly usersService: UsersService, 
     private readonly jwtService: JwtService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
-    const hashedPassword = await bcrypt.hash(createUserDto.passwordHash, 10);
-    return this.usersService.create({ ...createUserDto, passwordHash: hashedPassword });
+const {username, email, passwordHash, role} = createUserDto;
+    const password = await bcrypt.hash(passwordHash, 10);
+    return this.usersService.create({
+      email,
+      passwordHash: password,
+      role,
+      username,
+    });
   }
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -29,6 +35,7 @@ export class AuthService {
     const payload = { userId: user.id, username: user.username };
     return {
       access_token: this.jwtService.sign(payload),
+      role: user.role,
     }
  }
 }

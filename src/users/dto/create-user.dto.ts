@@ -1,4 +1,4 @@
-import { IsString, IsEmail, MinLength } from 'class-validator';
+import { IsString, IsEmail, MinLength, IsEnum } from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -9,4 +9,7 @@ export class CreateUserDto {
 
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   passwordHash: string;
+
+  @IsEnum(['user', 'admin'], {message: 'Role must be either "user" or "admin"'})
+  role: string;
 }

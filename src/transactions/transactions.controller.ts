@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Delete, Param, Body, Patch, BadRequestException, Request, UseGuards, Query} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Patch, BadRequestException, Request, UseGuards, Query } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { Transaction } from './entities/transactions.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth/jwt-auth.guard';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth/jwt-auth.guard';
 
 @Controller('transactions')
 export class TransactionsController {
@@ -11,7 +11,7 @@ export class TransactionsController {
   @UseGuards(JwtAuthGuard) // Protect the route with JWT
   @Get('summary')
   async getSummary(@Request() req) {
-    const userId = req.user.userId; // Extract user ID from validated JWT
+    const userId = req.user.id; // Extract user ID from validated JWT
     return this.transactionsService.getDashboardSummary(userId);
   }
 
@@ -26,58 +26,49 @@ export class TransactionsController {
       throw new BadRequestException('Invalid year parameter'); // Throw HTTP exception for invalid year
     }
   
-    const userId = req.user.userId; 
+    const userId = req.user.id; 
     return this.transactionsService.getMonthlyTransactions(userId, yearNumber);
   }
-  
 
   @UseGuards(JwtAuthGuard) // Protect the route with JWT
   @Get('category-usage-percent')
   async getCategoryUsagePercent(@Request() req) {
-    const userId = req.user.userId; // Extract user ID from validated JWT
+    const userId = req.user.id; // Extract user ID from validated JWT
     return this.transactionsService.getCategoryUsagePercent(userId);
   }
 
+  @UseGuards(JwtAuthGuard) // Protect the route with JWT
   @Get()
-  findAll(): Promise<Transaction[]> {
-    return this.transactionsService.findAll();
+  findAll(@Request() req) {
+    const userId = req.user.id; // Extract user ID from validated JWT
+    return this.transactionsService.findAll(userId);
   }
 
-  @Post()
-  create(@Body() transaction: CreateTransactionDto): Promise<Transaction> {
-    return this.transactionsService.create(transaction);
-  }
-
+  @UseGuards(JwtAuthGuard) // Protect the route with JWT
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<Transaction> {
-    console.log('Received ID:', id); // Log the received ID
-    id = id.trim(); // Remove surrounding spaces/newlines
-    if (!id || isNaN(Number(id))) {
-      throw new BadRequestException('Invalid transaction ID format');
-    }
-    return this.transactionsService.findOne(Number(id)); // Pass the cleaned number to the service
+  findOne(@Request() req, @Param('id') id: number) {
+    const userId = req.user.id; // Extract user ID from validated JWT
+    return this.transactionsService.findOne(userId, id);
   }
-  
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() transaction: Partial<Transaction>): Promise<Transaction> {
-    console.log('Received ID:', id); // Log the received ID
-    id = id.trim(); // Remove surrounding spaces/newlines
-    if (!id || isNaN(Number(id))) {
-      throw new BadRequestException('Invalid transaction ID format');
-    }
-    return this.transactionsService.update(Number(id), transaction);
-  }
-  
-  @Delete(':id')
-  remove(@Param('id') id: string): Promise<void> {
-    console.log('Received ID:', id); // Log the received ID
-    id = id.trim(); // Remove surrounding spaces/newlines
-    if (!id || isNaN(Number(id))) {
-      throw new BadRequestException('Invalid transaction ID format');
-    }
-    return this.transactionsService.remove(Number(id));
-  }
-  
-}
-// Removed the local declaration of UseGuards to avoid conflict with the imported UseGuards
 
+  @UseGuards(JwtAuthGuard) // Protect the route with JWT
+  @Post()
+  create(@Request() req, @Body() createTransactionDto: CreateTransactionDto) {
+    const userId = req.user.id; // Extract user ID from validated JWT
+    return this.transactionsService.create({ ...createTransactionDto, userId });
+  }
+
+  @UseGuards(JwtAuthGuard) // Protect the route with JWT
+  @Patch(':id')
+  update(@Request() req, @Param('id') id: number, @Body() updateTransactionDto: UpdateTransactionDto) {
+    const userId = req.user.id; // Extract user ID from validated JWT
+    return this.transactionsService.update(userId, id, updateTransactionDto);
+  }
+
+  @UseGuards(JwtAuthGuard) // Protect the route with JWT
+  @Delete(':id')
+  remove(@Request() req, @Param('id') id: number) {
+    const userId = req.user.id; // Extract user ID from validated JWT
+    return this.transactionsService.remove(userId, id);
+  }
+}

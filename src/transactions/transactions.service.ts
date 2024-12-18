@@ -5,6 +5,7 @@ import { Transaction } from './entities/transactions.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { Category } from 'src/categories/entities/categories.entity';
 import { User } from 'src/users/entities/user.entity';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
 @Injectable()
 export class TransactionsService {
@@ -19,17 +20,24 @@ export class TransactionsService {
     private categoryRepository: Repository<Category>,
   ) {}
 
-  findAll(): Promise<Transaction[]> {
+  findAll(userId: number): Promise<Transaction[]> {
     return this.transactionRepository.find({
-      relations:{
-        user:true,
-        category:true,
-      }
+      where: { user: { id: userId } },
+      relations: {
+        user: true,
+        category: true,
+      },
     });
   }
 
-  findOne(id: number): Promise<Transaction> {
-    return this.transactionRepository.findOneBy({ id });
+  findOne(userId: number, id: number): Promise<Transaction> {
+    return this.transactionRepository.findOne({
+      where: { id, user: { id: userId } },
+      relations: {
+        user: true,
+        category: true,
+      },
+    });
   }
 
   async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
@@ -57,9 +65,9 @@ export class TransactionsService {
     return this.transactionRepository.save(transaction);
   }
 
-  async update(id: number, transaction: Partial<Transaction>): Promise<Transaction> {
-    await this.transactionRepository.update(id, transaction);
-    return this.transactionRepository.findOneBy({ id });
+  async update(userId: number, id: number, updateTransactionDto: UpdateTransactionDto): Promise<Transaction> {
+    await this.transactionRepository.update({ id, user: { id: userId } }, updateTransactionDto);
+    return this.findOne(userId, id);
   }
 
   async getDashboardSummary(userId: number) {
@@ -76,6 +84,13 @@ export class TransactionsService {
       .andWhere('transaction.type = :type', { type: 'expense' })
       .select('SUM(transaction.amount)', 'total')
       .getRawOne();
+
+    // const savings = await this.transactionRepository
+    //   .createQueryBuilder('transaction')
+    //   .where('transaction.userId = :userId', { userId })
+    //   .andWhere('transaction.category = :category', { category: 'savings' })
+    //   .select('SUM(transaction.amount)', 'total')
+    //   .getRawOne();
 
     return {
       income: income.total || 0,
@@ -145,7 +160,7 @@ export class TransactionsService {
     }));
   }
 
-  async remove(id: number): Promise<void> {
-    await this.transactionRepository.delete(id);
+  async remove(userId: number, id: number): Promise<void> {
+    await this.transactionRepository.delete({ id, user: { id: userId } });
   }
 }
