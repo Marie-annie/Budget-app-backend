@@ -30,6 +30,7 @@
     "@nestjs/typeorm": "^10.0.2",
     "bcrypt": "^5.1.1",
     "class-validator": "^0.14.1",
+    "date-fns": "^4.1.0",
     "oracledb": "^6.7.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
