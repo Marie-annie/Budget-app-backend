@@ -22,7 +22,7 @@ import { AuthModule } from './auth/auth.module';
         username: configService.get<string>('DB_USERNAME', 'SYSTEM'),
         password: configService.get<string>('DB_PASSWORD', 'password'),
         sid: configService.get<string>('DB_SID', 'FREE'),
-        logging: true,
+        
         entities: [Transaction, User, Category],
         synchronize: false
       }),

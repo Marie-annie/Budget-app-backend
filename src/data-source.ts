@@ -13,5 +13,4 @@ export const dataSource = new DataSource({
   entities: [User, Category, Transaction],  
   migrations: [__dirname + '/migrations/**/*{.ts,.js}'],  
   synchronize: false, 
-  logging: true,
 });
